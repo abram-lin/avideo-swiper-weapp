@@ -1,0 +1,397 @@
+var MIN_DISTANCE = 10;
+
+var data = {
+	rect: null,
+	vertical: true,
+	touchable: true,
+	duration: 500,
+	circular: true,
+	count: 0,
+
+	deltaX: 0,
+	deltaY: 0,
+	delta: 0,
+
+	offsetX: 0,
+	offsetY: 0,
+	offset: 0,
+
+	maxCount: 0,
+	minOffset: 0,
+
+	active: 0,
+	swiping: false,
+	direction: '',
+
+	computedWidth: 0,
+	computedHeight: 0,
+	size: 0,
+	trackSize: 0,
+	touchStartTime: 0,
+	trackStyle: '',
+	componentIns: null,
+	trackIns: null,
+	children: [],
+	hidePlayerIdxs: [ 0, 1, 2 ],
+
+	scrolling: false,
+
+	dataCount: 0,
+	dataIdx: 0
+};
+
+function range(num, min, max) {
+	return Math.min(Math.max(num, min), max);
+}
+
+function touchstart(e) {
+	if (data.scrolling || data.swiping) {
+		return true;
+	}
+
+	if (!data.swiping) {
+		resetTouchStatus();
+	}
+	var touch = e.touches[0];
+	data.startX = touch.clientX;
+	data.startY = touch.clientY;
+
+	data.touchStartTime = Date.now();
+	if (!data.swiping) {
+		correctPosition();
+	}
+	return true;
+}
+
+function touchmove(e) {
+	if (data.scrolling) {
+		return true;
+	}
+
+	var touch = e.touches[0];
+	data.deltaX = touch.clientX - data.startX;
+	data.deltaY = touch.clientY - data.startY;
+	data.offsetX = Math.abs(data.deltaX);
+	data.offsetY = Math.abs(data.deltaY);
+	data.direction = data.direction || getDirection(data.offsetX, data.offsetY);
+
+	var touchable = data.touchable;
+	var vertical = data.vertical;
+	var swiping = data.swiping;
+
+	if (!touchable || !swiping) {
+		return;
+	}
+	var delta = vertical ? data.deltaY : data.deltaX;
+
+	if (isCorrectDirection()) {
+		move(0, delta, false);
+	}
+	return true;
+}
+
+function touchend(e) {
+	if (data.scrolling) {
+		return true;
+	}
+	var touchable = data.touchable;
+	var vertical = data.vertical;
+	var swiping = data.swiping;
+	var size = data.size;
+	if (!touchable || !swiping) {
+		return;
+	}
+	data.swiping = false;
+	var delta = vertical ? data.deltaY : data.deltaX;
+	var duration = Date.now() - data.touchStartTime;
+	var speed = delta / duration;
+	var shouldSwipe = (Math.abs(speed) > 0.25 && duration < 2000) || Math.abs(delta) > size / 2;
+	if (shouldSwipe && isCorrectDirection()) {
+		var dataIdx = data.dataIdx;
+		var dataCount = data.dataCount;
+		var offset = vertical ? data.offsetY : data.offsetX;
+		var pace = 0;
+		pace = offset > 0 ? (delta > 0 ? -1 : 1) : 0;
+		var boundPrev = dataIdx <= 0 || dataCount === 0;
+		var boundNext = dataIdx >= dataCount - 1;
+		pace = pace > 0 ? (boundNext ? 0 : pace) : boundPrev ? 0 : pace;
+		if (pace > 0) {
+			data.dataIdx++;
+		} else if (pace < 0) {
+			data.dataIdx--;
+		}
+
+		data.scrolling = true;
+		move(pace, 0, true);
+	} else if (delta) {
+		move(0, 0, false);
+	}
+
+	return true;
+}
+
+function move(pace = 0, offset = 0, emitChage) {
+	var active = data.active;
+	var vertical = data.vertical;
+	var trackSize = data.trackSize;
+	var minOffset = data.minOffset;
+	var children = data.children;
+	var computedHeight = data.computedHeight;
+	var computedWidth = data.computedWidth;
+	var count = data.count;
+	if (count <= 1) {
+		return;
+	}
+	var targetActive = getTargetActive(pace);
+	var targetOffset = getTargetOffset(targetActive, offset);
+
+	data.active = targetActive;
+	data.offset = targetOffset;
+
+	var firstChild = children[0];
+	if (firstChild && targetOffset !== minOffset) {
+		var outRightBound = targetOffset < minOffset;
+		var offset = outRightBound ? trackSize : 0;
+		var translate3d = vertical ? 'translate(0, ' + offset + 'px)' : 'translate(' + offset + 'px, 0)';
+		firstChild.setStyle({
+			transform: translate3d + ' translateZ(0px)',
+			height: computedHeight + 'px',
+			width: computedWidth + 'px'
+		});
+	}
+	var lastChild = children[count - 1];
+	if (lastChild && targetOffset !== 0) {
+		var outLeftBound = targetOffset > 0;
+		var offset = outLeftBound ? -trackSize : 0;
+		var translate3d = vertical ? 'translate(0, ' + offset + 'px)' : 'translate(' + offset + 'px, 0)';
+		lastChild.setStyle({
+			transform: translate3d + ' translateZ(0px)',
+			height: computedHeight + 'px',
+			width: computedWidth + 'px'
+		});
+	}
+	updateTrackStyle(targetOffset);
+
+	var playerIdx = getPlayerIndex();
+	var dataIdx = data.dataIdx;
+	hidePlayer(playerIdx, dataIdx, data.dataCount);
+
+	if (emitChage && targetActive !== active) {
+		data.componentIns.callMethod('swiperChange', {
+			playerIdx,
+			dataIdx
+		});
+	}
+}
+
+function isCorrectDirection() {
+	var vertical = data.vertical;
+	var expect = vertical ? 'vertical' : 'horizontal';
+	return data.direction === expect;
+}
+
+function getDirection(x, y) {
+	if (x > y && x > MIN_DISTANCE) {
+		return 'horizontal';
+	}
+	if (y > x && y > MIN_DISTANCE) {
+		return 'vertical';
+	}
+	return '';
+}
+
+function getTargetActive(pace) {
+	var active = data.active;
+	var count = data.count;
+	var maxCount = data.maxCount;
+	var circular = data.circular;
+
+	if (pace) {
+		if (circular) {
+			return range(active + pace, -1, count);
+		}
+		return range(active + pace, 0, maxCount);
+	}
+	return active;
+}
+
+function getTargetOffset(targetActive, offst = 0) {
+	var size = data.size;
+	var minOffset = data.minOffset;
+	var circular = data.circular;
+
+	var currentPosition = targetActive * size;
+	// if (!circular) {
+	// 	currentPosition = Math.min(currentPosition, -minOffset);
+	// }
+	var targetOffset = Math.round(offst - currentPosition);
+	// if (!circular) {
+	// 	targetOffset = range(targetOffset, minOffset, 0);
+	// }
+	return targetOffset;
+}
+
+function correctPosition() {
+	var active = data.active;
+	var count = data.count;
+	data.swiping = true;
+	if (active <= -1) {
+		move(count, 0, false);
+	}
+
+	if (active >= count) {
+		move(-count, 0, false);
+	}
+}
+
+function resetTouchStatus() {
+	data.direction = '';
+	data.deltaX = 0;
+	data.deltaY = 0;
+	data.offsetX = 0;
+	data.offsetY = 0;
+}
+
+function updateTrackStyle(offset, animating = !data.swiping) {
+	var vertical = data.vertical;
+	var duration = data.duration;
+	var trackSize = data.trackSize;
+	var mainAxis = vertical ? 'height' : 'width';
+	var translate3d = vertical ? 'translate(0, ' + offset + 'px)' : 'translate(' + offset + 'px, 0)';
+	var trackStyle = {
+		'transition-duration': animating ? duration + 'ms' : '0ms',
+		transform: translate3d + ' translateZ(0px)'
+	};
+	trackStyle[mainAxis] = trackSize + 'px';
+	data.trackIns.setStyle(trackStyle);
+}
+
+function getPlayerIndex() {
+	var active = data.active;
+	var count = data.count;
+	return (active + count) % count;
+}
+
+function hidePlayer(playerIdx, dataIdx, dataCount) {
+	var players = data.children;
+	var hidePlayerIdxs = data.hidePlayerIdxs;
+	hidePlayerIdxs.forEach(function(idx) {
+		players[idx].removeClass('aswiper-item--hidden');
+	});
+	hidePlayerIdxs = [];
+
+	if (dataCount < 1) {
+		players.forEach(function(player, idx) {
+			player.addClass('aswiper-item--hidden');
+			hidePlayerIdxs.push(idx);
+		});
+	} else {
+		if (dataIdx === 0) {
+			players[2].addClass('aswiper-item--hidden');
+			hidePlayerIdxs.push(2);
+		}
+		if (dataIdx === dataCount - 1) {
+			var hideIdx = playerIdx + 1;
+			if (hideIdx > 2) {
+				hideIdx = 0;
+			}
+			players[hideIdx].addClass('aswiper-item--hidden');
+			hidePlayerIdxs.push(hideIdx);
+		}
+	}
+	data.hidePlayerIdxs = hidePlayerIdxs;
+}
+
+function setElSize(rect, vertical) {
+	if (!rect) {
+		return;
+	}
+	var computedWidth = data.computedWidth;
+	var computedHeight = data.computedHeight;
+	var size = vertical ? computedHeight : computedWidth;
+	var trackSize = size * data.count;
+	var minOffset = (vertical ? computedHeight : computedWidth) - trackSize;
+	var maxCount = Math.ceil(Math.abs(minOffset) / size);
+	if (vertical) {
+		data.trackIns.addClass('aswiper__track--vertical');
+	} else {
+		data.trackIns.removeClass('aswiper__track--vertical');
+	}
+	data.size = size;
+	data.trackSize = trackSize;
+	data.minOffset = minOffset;
+	data.maxCount = maxCount;
+	updateTrackStyle(getTargetOffset(data.active), false);
+}
+
+function onTransitionEnd(e) {
+	data.scrolling = false;
+	data.componentIns.callMethod('onTransitionEnd');
+}
+
+function trackDataObserver(trackData, oldData, ins) {
+	if (!data.componentIns) {
+		data.componentIns = ins;
+		data.trackIns = ins.selectComponent('#aswiper__track');
+		data.children = ins.selectAllComponents('.aswiper-item');
+		data.count = data.children.length;
+	}
+
+	var rect = trackData.operation.rect;
+	if (typeof rect === 'object') {
+		data.rect = rect;
+		data.computedWidth = Math.round(trackData.width || rect.width);
+		data.computedHeight = Math.round(trackData.height || rect.height);
+		data.children.forEach(function(child) {
+			child.setStyle({
+				height: data.computedHeight + 'px',
+				width: data.computedWidth + 'px'
+			});
+		});
+		setElSize(rect, data.vertical);
+	}
+
+	var vertical = trackData.vertical;
+
+	if (typeof vertical === 'boolean' && vertical !== data.vertical) {
+		data.vertical = vertical;
+		setElSize(data.rect, vertical);
+	}
+
+	data.duration = trackData.duration;
+
+	var dataCount = trackData.operation.dataCount;
+	if (typeof dataCount === 'number') {
+		if (dataCount !== data.dataCount) {
+			data.dataCount = dataCount;
+			hidePlayer(data.dataIdx % 3, data.dataIdx, data.dataCount);
+		}
+	}
+
+	var dataIdx = trackData.operation.dataIdx;
+	if (typeof dataIdx === 'number') {
+		dataIdx = Math.max(Math.min(dataIdx, data.dataCount - 1), 0);
+		data.dataIdx = dataIdx;
+		var active = dataIdx % 3;
+		if (data.active !== active) {
+			data.active = active;
+			if (data.rect) {
+				updateTrackStyle(getTargetOffset(data.active), false);
+			}
+		}
+		hidePlayer(active, dataIdx, data.dataCount);
+	}
+
+	var touchable = trackData.operation.touchable;
+	if (typeof touchable === 'boolean') {
+		data.touchable = touchable;
+	}
+}
+
+module.exports = {
+	touchstart: touchstart,
+	touchmove: touchmove,
+	touchend: touchend,
+	onTransitionEnd: onTransitionEnd,
+	trackDataObserver: trackDataObserver
+};

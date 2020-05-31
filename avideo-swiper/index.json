@@ -1,0 +1,6 @@
+{
+	"component": true,
+	"usingComponents": {
+		"default-panel": "./component/default-panel/index"
+	}
+}

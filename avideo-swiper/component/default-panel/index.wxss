@@ -1,0 +1,34 @@
+.panel {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	left: 0;
+	top: 0;
+}
+
+.title {
+	display: block;
+	color: red;
+	width: 250px;
+	height: 30px;
+	position: absolute;
+	left: 16px;
+	top: 58px;
+}
+
+.panel .forward-btn {
+	position: absolute;
+	bottom: 110px;
+	bottom: calc(env(safe-area-inset-bottom, 0px) + 110px);
+	right: 12rpx;
+	border: 0;
+	margin: 0;
+	padding: 0;
+	width: auto;
+}
+
+.forward-btn-img {
+	display: block;
+	width: 68rpx;
+	height: 68rpx;
+}

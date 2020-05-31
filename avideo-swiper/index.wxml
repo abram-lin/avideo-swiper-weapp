@@ -1,0 +1,18 @@
+<wxs module="touch" src="./touch.wxs"></wxs>
+<view class="aswiper">
+  <view id="aswiper__track" class="aswiper__track" bind:touchstart="{{touch.touchstart}}" catch:touchmove="{{touch.touchmove}}" bind:touchend="{{touch.touchend}}" change:trackData="{{touch.trackDataObserver}}" trackData="{{trackData}}" bind:transitionend="{{touch.onTransitionEnd}}">
+    <view wx:for="{{players}}" wx:for-item="player" wx:for-index="idx" wx:key="id" class="aswiper-item aswiper-item--hidden">
+      <view class="aswiper-content">
+        <video id="{{player.id}}" class="aswiper-item-video" data-player-idx="{{idx}}" src="{{player.src}}" loop="{{loop}}" autoplay="{{false}}" object-fit="{{objectFit}}" enable-play-gesture="{{false}}" enable-progress-gesture="{{false}}" show-center-play-btn="{{false}}" show-progress="{{false}}" controls="{{false}}" bindplay="onPlay" bindpause="onPause" bindended="onEnded" binderror="onError" bindtimeupdate="onTimeUpdate" bindwaiting="onWaiting" bindprogress="onProgress" bindloadedmetadata="onLoadedMetaData"></video>
+        <image hidden="{{player.scene}}" class="video-poster" src="{{player.poster}}" mode="aspectFill" />
+        <view class="video-overlay" data-player-idx="{{idx}}" bind:tap="onVideoOverlayTap">
+          <view class="aswiper-item-panel" hidden="{{delayShowPanel && !player.scene}}">
+            <default-panel wx:if="{{panelType === 'default'}}" video="{{curQueue[idx]}}"></default-panel>
+          </view>
+          <image hidden="{{!player.scene || player.status !== 2}}" data-player-idx="{{idx}}" class="video-play-btn" src="./image/play-btn.png" mode="aspectFit" catch:tap="onVideoPlayBtnTap" />
+        </view>
+      </view>
+      <view class="aswiper-content__overlay"></view>
+    </view>
+  </view>
+</view>

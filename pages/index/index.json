@@ -1,0 +1,6 @@
+{
+	"usingComponents": {
+		"avideo-swiper": "../../avideo-swiper/index"
+	},
+	"navigationStyle": "custom"
+}

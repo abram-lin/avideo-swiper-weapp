@@ -1,0 +1,1 @@
+<avideo-swiper video-list="{{videos}}" initial-index="{{videoIndex}}" bind:change="onChange" duration="{{duration}}" bind:play="onPlay" bind:forward="onPanelForward"></avideo-swiper>
