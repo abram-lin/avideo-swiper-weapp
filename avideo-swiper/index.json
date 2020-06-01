@@ -1,6 +1,8 @@
 {
 	"component": true,
 	"usingComponents": {
-		"default-panel": "./component/default-panel/index"
+		"default-panel": "./component/default-panel/index",
+		"normal-panel": "./component/normal-panel/index",
+		"share-panel": "./component/share-panel/index"
 	}
 }

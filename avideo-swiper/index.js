@@ -77,11 +77,11 @@ Component({
 			duration: 500,
 			operation: {}
 		},
-		curQueue: [ {}, {}, {} ],
+		curQueue: [{}, {}, {}],
 		curVideo: null
 	},
 	observers: {
-		'width, height': function(width, height) {
+		'width, height': function (width, height) {
 			if (width < 0 || height < 0) {
 				throw new Error('width or height can not be less than 0.');
 			}
@@ -115,7 +115,7 @@ Component({
 				throw new Error('videoList is expected an array.');
 			}
 		},
-		'initialIndex, videoList': function(initialIndex, videoList) {
+		'initialIndex, videoList': function (initialIndex, videoList) {
 			const operation = {};
 			if (initialIndex !== this._initialIndex && videoList.length > 0) {
 				this._initialIndex = initialIndex;
@@ -260,20 +260,27 @@ Component({
 			const idx = e.currentTarget.dataset.playerIdx;
 			const ctx = this._videoContexts[idx];
 			const player = this.data.players[idx];
-			if (player.status === 1) {
+			if (player.status === 2) {
+				if (player.src) {
+					ctx.play();
+				}
+			} else {
 				ctx.pause();
 				const status = `players[${idx}].status`;
+				const scene = `players[${idx}].scene`;
 				this.setData({
-					[status]: 2
+					[status]: 2,
+					[scene]: true
 				});
-			} else {
-				ctx.play();
 			}
 		},
 		onVideoPlayBtnTap(e) {
 			const idx = e.currentTarget.dataset.playerIdx;
 			const ctx = this._videoContexts[idx];
-			ctx.play();
+			const player = this.data.players[idx];
+			if (player.src) {
+				ctx.play();
+			}
 		},
 		onPlay(e) {
 			const idx = e.currentTarget.dataset.playerIdx;
@@ -350,10 +357,12 @@ Component({
 		playCurrent(cur) {
 			const { players } = this.data;
 			this._videoContexts.forEach((ctx, idx) => {
+				const player = players[idx];
 				if (cur === idx) {
-					ctx.play();
+					if (player.src) {
+						ctx.play();
+					}
 				} else {
-					const player = players[idx];
 					player.scene = false;
 					player.status = 0;
 					ctx.stop();
@@ -388,12 +397,12 @@ Component({
 		},
 		getRect(selector, all) {
 			var _this = this;
-			return new Promise(function(resolve) {
+			return new Promise(function (resolve) {
 				wx
 					.createSelectorQuery()
 					.in(_this)
-					[all ? 'selectAll' : 'select'](selector)
-					.boundingClientRect(function(rect) {
+				[all ? 'selectAll' : 'select'](selector)
+					.boundingClientRect(function (rect) {
 						if (all && Array.isArray(rect) && rect.length) {
 							resolve(rect);
 						}
@@ -403,6 +412,8 @@ Component({
 					})
 					.exec();
 			});
+		},
+		noop() {
 		}
 	}
 });

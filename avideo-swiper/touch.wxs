@@ -32,7 +32,7 @@ var data = {
 	componentIns: null,
 	trackIns: null,
 	children: [],
-	hidePlayerIdxs: [ 0, 1, 2 ],
+	hidePlayerIdxs: [0, 1, 2],
 
 	scrolling: false,
 
@@ -275,13 +275,13 @@ function getPlayerIndex() {
 function hidePlayer(playerIdx, dataIdx, dataCount) {
 	var players = data.children;
 	var hidePlayerIdxs = data.hidePlayerIdxs;
-	hidePlayerIdxs.forEach(function(idx) {
+	hidePlayerIdxs.forEach(function (idx) {
 		players[idx].removeClass('aswiper-item--hidden');
 	});
 	hidePlayerIdxs = [];
 
 	if (dataCount < 1) {
-		players.forEach(function(player, idx) {
+		players.forEach(function (player, idx) {
 			player.addClass('aswiper-item--hidden');
 			hidePlayerIdxs.push(idx);
 		});
@@ -342,7 +342,7 @@ function trackDataObserver(trackData, oldData, ins) {
 		data.rect = rect;
 		data.computedWidth = Math.round(trackData.width || rect.width);
 		data.computedHeight = Math.round(trackData.height || rect.height);
-		data.children.forEach(function(child) {
+		data.children.forEach(function (child) {
 			child.setStyle({
 				height: data.computedHeight + 'px',
 				width: data.computedWidth + 'px'

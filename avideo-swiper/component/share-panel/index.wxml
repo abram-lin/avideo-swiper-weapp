@@ -1,0 +1,6 @@
+<view class="panel">
+  <text class="title">{{videoData.title}}</text>
+  <button class="forward-btn" plain="true" catch:tap="onForwardTap">
+    <image class="forward-btn-img" src="../../image/forward.png" />
+  </button>
+</view>
