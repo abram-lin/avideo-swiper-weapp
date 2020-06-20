@@ -16,9 +16,16 @@ avideo-swiper-weapp 组件不依赖任何第三方组件，也没使用小程序
 
 - 组件属性
 
-| 字段            | 类型                     | 必填 | 描述                                       |
-| --------------- | ------------------------ | ---- | ------------------------------------------ |
-|width      | Number                | 否   | 播放器宽度               |
-|height | Number                | 否   | 播放器高度              |
-
-待续。。。
+| 字段             | 类型                     | 必填 | 描述                                        |
+| --------------- | ------------------------| ---- | ------------------------------------------ |
+|width            | Number                  | 否   | 播放器宽度                                   |
+|height           | Number                  | 否   | 播放器高度                                   |
+|vertical         | Boolean                 | 否   | 是否为竖向滚动，支持横向滚动，默认为竖向滚动       |
+|duration         | Number                  | 否   | 滚动动画时长，单位ms，默认500ms                |
+|loop             | Boolean                 | 否   | 视频播放完是否重新播放，默认true                |
+|objectFit        | String                  | 否   | 当视频大小与 video 容器大小不一致时，视频的表现形式，参见小程序 video 组件，默认 cover |
+|autoPlay         | Boolean                 | 否   | 设置 videoList 视频源后是否自动开始播放         |
+|panelType        | String                  | 否   | 播放器控制面板类型                             |
+|defaultPoster    | String                  | 否   | 如果视频源没有封面时，显示该封面                 |
+|initialIndex     |  Number                 | 否   | 要播放的视频索引，默认0                        |
+|videoList        | Array                   | 是   | 视频源，item 需包含 src 和 poster 属性          |
